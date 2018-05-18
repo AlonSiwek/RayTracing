@@ -199,9 +199,7 @@ public class Scene {
 		Point hittingPoint = r.getHittingPoint(h);
 		Surface surface = h.getSurface();
 		Vec color = surface.Ka().mult(this.ambient);
-		Iterator<Light> iterator = this.lightSources.iterator();
-		while (iterator.hasNext()) {
-			Light l = iterator.next();
+		for (Light l : this.lightSources) {
 			Ray lightRay;
 			if (this.isBlocked(l, lightRay = l.createLightRay(hittingPoint))) continue;
 			Vec tmpColor = this.diffuse(h, lightRay);
@@ -213,11 +211,7 @@ public class Scene {
 	}
 
 	private boolean isBlocked(Light l, Ray r) {
-		for (Surface surface : this.surfaces) {
-			if (!l.isBlocked(surface, r)) continue;
-			return true;
-		}
-		return false;
+		return this.surfaces.stream().anyMatch(surface -> l.isBlocked(surface, r));
 	}
 
 	private Hit intersection(Ray r) {
