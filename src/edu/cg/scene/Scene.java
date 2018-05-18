@@ -195,18 +195,18 @@ public class Scene {
     private Vec calcColor(Ray r, int recusionLevel) {
         Hit h = this.findMinIntersection(r);
         if (h == null) return this.backgroundColor;
-        Point hittingPoint = r.getHittingPoint(h);
+        Point hitPoint = r.getHittingPoint(h);
         Surface surface = h.getSurface();
-        Vec color = surface.Ka().mult(this.ambient);
-        for (Light l : this.lightSources) {
-            Ray lightRay;
-            if (this.isBlocked(l, lightRay = l.createLightRay(hittingPoint))) continue;
-            Vec tmpColor = this.diffuse(h, lightRay);
-            tmpColor = tmpColor.add(this.specular(h, lightRay, r));
-            Vec intensity = l.intensity(hittingPoint, lightRay);
-            color = color.add(tmpColor.mult(intensity));
-        }
-        return color;
+        Vec[] color = {surface.Ka().mult(this.ambient)};
+        this.lightSources.stream().filter(light -> !this.isBlocked(light, light.createLightRay(hitPoint)))
+                .forEach(light -> {
+                    Ray ray = light.createLightRay(hitPoint);
+                    Vec tmpColor = this.diffuse(h, ray);
+                    tmpColor = tmpColor.add(this.specular(h, ray, ray));
+                    Vec intensity = light.intensity(hitPoint, ray);
+                    color[0] = color[0].add(tmpColor.mult(intensity));
+                });
+        return color[0];
     }
 
     private boolean isBlocked(Light l, Ray r) {
